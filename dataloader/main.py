@@ -1,4 +1,5 @@
 from dataload import get_dataloaders
+from visualize import visualize_data
 
 def main():
     base_dir = '.'  # 현재 디렉토리
@@ -9,6 +10,9 @@ def main():
         print("Images shape:", images.shape)
         print("LiDAR data shape:", lidar_data.shape)
         print("Ground truth images shape:", gt_images.shape)
+        
+        # 첫 번째 샘플 시각화
+        visualize_data(images[0], lidar_data[0])
         break
 
     print("\nValidation data:")

@@ -16,7 +16,9 @@ def make_transform(smaller_edge_size: int) -> transforms.Compose:
     ])
 
 def bin_to_numpy(bin_path):
-    return np.fromfile(bin_path, dtype=np.float32)
+    points = np.fromfile(bin_path, dtype=np.float32).reshape(-1, 5)[:,:4]  #jk hesai40 data
+    points[:, 3] = 1.0  # homogeneous
+    return points
 
 class DrivableAreaDataset(Dataset):
     def __init__(self, base_dir, split, transform=None):
@@ -48,6 +50,7 @@ class DrivableAreaDataset(Dataset):
 
         # LiDAR 데이터 로드
         lidar_data = bin_to_numpy(lidar_path)
+        print('liader : ', lidar_data.shape)
         lidar_tensor = torch.from_numpy(lidar_data).float()
 
         # Ground Truth 이미지 로드
