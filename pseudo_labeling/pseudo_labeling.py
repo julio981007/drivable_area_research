@@ -151,9 +151,9 @@ def roi(model_input, box_size, dataset):
                 if (box_size-10<=i<=box_size-8)&(box_size//2+right_side_width_offset<=j<=box_size//2+right_side_width_offset+1): # Tire : 8, 4 # Non-Tire : 6, 2 # Snow : 
                     flatten_indices.append(i*box_size+j)
                     tmp_img[upper:lower, left:right] = np.array((255, 0, 0))
-        # plt.imshow(tmp_img)
-        # plt.show()
-        # sys.exit()
+    # plt.imshow(tmp_img)
+    # plt.show()
+    # sys.exit()
     
     return flatten_indices
 
@@ -164,6 +164,7 @@ def main():
     for folder in tqdm(folders):
         img_path = os.path.join(base_path, f'{folder}/image_data')
         depth_path = os.path.join(base_path, f'{folder}/dense_depth')
+        height_path = os.path.join(base_path, f'{folder}/height')
         gt_path = os.path.join(base_path, f'{folder}/gt_image')
         
         save_path = os.path.join(base_path, f'{folder}/{save_folder_name}')
@@ -173,8 +174,8 @@ def main():
         img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
         with torch.no_grad():
             for i in tqdm(img_list):
-                # if i!='005495.png':
-                #     continue
+                if i!='1620330540720.png':
+                    continue
                 img_name = i
                 img = Image.open(os.path.join(img_path, f'{img_name}')).convert('RGB')
                 img_np = np.array(img)
@@ -183,15 +184,25 @@ def main():
                 # depth = cv2.imread(os.path.join(depth_path, f'{img_name}'), cv2.IMREAD_GRAYSCALE)
                 # depth = cv2.resize(depth, (box_size, box_size), interpolation=cv2.INTER_NEAREST)
                 # depth_np = np.array(depth)
-                # depth_np = depth_np # (depth_np - np.min(depth_np)) / (np.max(depth_np) - np.min(depth_np))
+                # depth_np = (depth_np-depth_np.mean())/(depth_np.std()) # (depth_np - np.min(depth_np)) / (np.max(depth_np) - np.min(depth_np))
                 # depth_np = np.expand_dims(depth_np, axis=0)
                 depth_np = None
+                
+                height = cv2.imread(os.path.join(height_path, img_name.replace('png', 'tiff')), cv2.IMREAD_UNCHANGED)
+                height = cv2.resize(height, (box_size, box_size), interpolation=cv2.INTER_NEAREST)
+                height_np = np.array(height)
+                height_np = height_np*20 # (height_np-height_np.mean())/(height_np.std()) # (height_np - np.min(height_np)) / (np.max(height_np) - np.min(height_np))
+                height_np = np.expand_dims(height_np, axis=0)
+                depth_np = height_np
                 
                 inputs = processor(images=img_np, return_tensors="pt", do_normalize=False)
                 output_size = int(inputs.pixel_values[0].shape[1]/grid_size)
                 
                 model_input = inputs.pixel_values.to(device)
                 model_output = dinov2_vitg14.get_intermediate_layers(model_input)[0]#.cpu().numpy()
+                print(model_output.min(), model_output.max())
+                print(model_output.mean())
+                sys.exit()
                 
                 # min_vals = model_output.min(dim=-1, keepdim=True).values
                 # max_vals = model_output.max(dim=-1, keepdim=True).values
@@ -205,8 +216,13 @@ def main():
                     else:
                         flatten_indices1 = find_drivable_indices(box_size, crf_drivable_map)
                         crf_drivable_map1 = fine_drivable(img, depth_np, model_output, flatten_indices1, oriHeight, oriWidth, (output_size, output_size), j)
+                
+                plt.imshow(crf_drivable_map1)
+                plt.colorbar()
+                plt.show()
+                sys.exit()
 
-                cv2.imwrite(filename=os.path.join(save_path, f'{img_name}'), img=(crf_drivable_map1*255))
+                cv2.imwrite(filename=os.path.join(save_path, img_name.split('.')[0]+'_fillcolor.png'), img=(crf_drivable_map1*255))
                 
                 if dataset=='gurka':
                     continue
@@ -233,7 +249,7 @@ if __name__ == "__main__":
     dinov2_vitg14.eval().to(device)
     
     img_size = 644
-    threshold = 0.5 # orfd : 0.5 / gurka : 0.6
+    threshold = 0.55 # orfd : 0.55 / gurka : 0.6
     grid_size = 14
     box_size = img_size // grid_size  # num of grid per row and column
     num_labels = 2 # Drivable / Non-drivable
@@ -241,9 +257,10 @@ if __name__ == "__main__":
     
     dataset = 'orfd' # orfd, gurka
     base_path = f'/home/julio981007/HDD/{dataset}'
-    folders = ['5']
+    folders = ['0', '1', '2', '3', '4', '5']
     folders = ['training', 'testing', 'validation']
+    folders = ['training']
     
-    save_folder_name = 'pseudo_labeling'# pseudo_labeling / pseudo_labeling_raw_depth
+    save_folder_name = 'tmp' # auto_labeling / auto_labeling_raw_depth
     
     main()

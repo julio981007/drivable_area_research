@@ -19,11 +19,17 @@ import open3d as o3d
 from tqdm import tqdm
 
 import multiprocessing as mp
+import psutil
+import ray
+from ray.experimental import tqdm_ray
 import sys
+
+remote_tqdm = ray.remote(tqdm_ray.tqdm)
+
+num_logical_cpus = psutil.cpu_count()
 
 cmap = plt.cm.jet
 cmap2 = plt.cm.nipy_spectral
-
 
 def show_open3d_pcd(pcd, show_origin=True, origin_size=3, show_grid=True):
     cloud = o3d.geometry.PointCloud()
@@ -38,37 +44,6 @@ def show_open3d_pcd(pcd, show_origin=True, origin_size=3, show_grid=True):
     
     # set front, lookat, up, zoom to change initial view
     o3d.visualization.draw_geometries([cloud, coord])
-
-def show_velo(pointcloud):
-    x = pointcloud[:, 0]  # x position of point
-    y = pointcloud[:, 1]  # y position of point
-    z = pointcloud[:, 2]  # z position of point
-    
-    d = np.sqrt(x ** 2 + y ** 2)  # Map Distance from sensor
-    
-    degr = np.degrees(np.arctan(z / d))
-    
-    vals = 'height'
-    if vals == "height":
-        col = z
-    else:
-        col = d
-    
-    fig = mayavi.mlab.figure(bgcolor=(0, 0, 0), size=(640, 500))
-    mayavi.mlab.points3d(x, y, z,
-                        col,  # Values used for Color
-                        mode="point",
-                        colormap='spectral',  # 'bone', 'copper', 'gnuplot'
-                        # color=(0, 1, 0),   # Used a fixed (r,g,b) instead
-                        figure=fig,
-                        )
-    
-    mayavi.mlab.show()
-
-def depth_colorize(depth):
-    depth = (depth - np.min(depth)) / (np.max(depth) - np.min(depth))
-    depth = 255 * cmap(depth)[:, :, :3]  # H, W, C
-    return depth.astype('uint8')
 
 def load_velodyne_points(filename):
     """Load 3D point cloud from KITTI file format
@@ -319,56 +294,53 @@ def lin_interp(shape, xyd):
     disparity = f(IJ).reshape(shape)
     return disparity
 
+@ray.remote(num_cpus=(num_logical_cpus//4))
+def process_file(path2, lidar_path, rgb_path, sparse_depth_dir, dense_depth_dir, height_dir, calib_dir):
+    rgb_data_list = glob.glob(os.path.join(rgb_path, '*'))
+    for rgb_filename in rgb_data_list:
+        img_name = os.path.basename(rgb_filename).split('.')[0]
+        lidar_dir = os.path.join(lidar_path, img_name + '.bin')
+        dense_depth_save_dir = os.path.join(dense_depth_dir, img_name + '.png')
+        calib_save_dir = os.path.join(calib_dir, img_name + '.txt')
+        height_save_dir = os.path.join(height_dir, img_name + '.tiff')
+        
+        # Generate depth map
+        sparse_depth_pred, dense_depth_pred = generate_depth_map(lidar_dir, dense_depth_save_dir, calib_save_dir)
+        dense_depth = copy.deepcopy(dense_depth_pred)
+        cv2.imwrite(height_save_dir, dense_depth)
 
 def main(base_path):
-    """
-    process hesai40 lidar to sparse depth image and dense image
-    """
-    # path1_list = glob.glob(base_path+'/*')
-    for path2 in tqdm(path1_list):
-        path2 = os.path.join(base_path, path2)
-        lidar_path = os.path.join(path2,'lidar_data')
-        rgb_path = os.path.join(path2,'image_data')
+    tasks = []
 
-        sparse_depth_dir = os.path.join(path2,'sparse_depth')
-        dense_depth_dir = os.path.join(path2,'dense_depth')
-        height_dir = os.path.join(path2,'height')
-        calib_dir = os.path.join(path2,'calib')
-        # if not os.path.exists(sparse_depth_dir):
-        #     os.mkdir(sparse_depth_dir)
-        # if not os.path.exists(dense_depth_dir):
-        #     os.mkdir(dense_depth_dir)
+    for path2 in path1_list:
+        path2 = os.path.join(base_path, path2)
+        print(path2)
+        
+        lidar_path = os.path.join(path2, 'lidar_data')
+        rgb_path = os.path.join(path2, 'image_data')
+        sparse_depth_dir = os.path.join(path2, 'sparse_depth')
+        dense_depth_dir = os.path.join(path2, 'dense_depth')
+        height_dir = os.path.join(path2, 'height')
+        calib_dir = os.path.join(path2, 'calib')
+
         if not os.path.exists(height_dir):
             os.mkdir(height_dir)
         else:
-            raise Exception('The directory {} already exists.'.format(height_dir))
+            raise Exception(f'The directory {height_dir} already exists.')
 
-        # depth img name and dirs
-        # lidar_data_list = glob.glob(lidar_path+'/*')
-        rgb_data_list = glob.glob(rgb_path+'/*')
-        for rgb_filename in tqdm(rgb_data_list):
-            # print('velo_filename:',velo_filename)
-            img_name = rgb_filename.split('/')[-1].split('.')[0]
-            lidar_dir = os.path.join(lidar_path,img_name+'.bin')
-            sparse_depth_save_dir = os.path.join(sparse_depth_dir,img_name+'.png')
-            dense_depth_save_dir = os.path.join(dense_depth_dir,img_name+'.png')
-            rgb_img_dir = os.path.join(rgb_path,img_name+'.png')
-            
-            calib_save_dir = os.path.join(calib_dir,img_name+'.txt')
-            height_save_dir = os.path.join(height_dir,img_name+'.tiff')
-        
+        # Add the task to the list of tasks
+        tasks.append(process_file.remote(path2, lidar_path, rgb_path, sparse_depth_dir, dense_depth_dir, height_dir, calib_dir))
+    
+    # Execute all tasks in parallel
+    ray.get(tasks)
 
-            # TODO: prepare for multi process 
-            # lidar to depth
-            sparse_depth_pred, dense_depth_pred = generate_depth_map(lidar_dir, dense_depth_save_dir, calib_save_dir)
-
-            dense_depth = copy.deepcopy(dense_depth_pred)
-            
-            cv2.imwrite(height_save_dir, dense_depth)
-
-
-if __name__=='__main__':
-    base_path = '/home/julio981007/HDD/orfd'
-    path1_list = ['training']
+if __name__ == '__main__':
+    ray.init()
+    
+    dataset = 'gurka'
+    base_path = f'/home/julio981007/HDD/{dataset}'
+    path1_list = ['training', 'validation', 'testing']
+    path1_list = ['0', '1', '2', '3', '4', '5']
+    path1_list = ['1']
     
     main(base_path)

@@ -4,6 +4,7 @@ import numpy as np
 from drivable_learner import DrivableLearner
 import os
 import argparse
+import sys
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -17,15 +18,22 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_PL_nodepth")
+parser.add_argument("--dataset_folders", type=str, required=False, nargs='+', default=['training']) # ['0', '1', '2', '3', '4', '5'] / ['training']
+
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawheight)_unet(small)_nodepth")
+
+parser.add_argument("--depth", type=str2bool, default=False)
+parser.add_argument("--gt_pl", type=str2bool, default=False)
+parser.add_argument("--labeling_folder", type=str, 
+        choices=['auto_labeling', 'auto_labeling_raw_depth', 'auto_labeling_minmax_depth', 'auto_labeling_std_depth', 'auto_labeling_raw_height'], default="auto_labeling_raw_height")
+
 parser.add_argument("--patience", type=int, default=5)
 parser.add_argument("--learning_rate", type=float, default=1e-4, help='Learning rate of for adam')
-parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--batch_size", type=int, default=8)
 parser.add_argument("--num_epochs", type=int, default=30)
 
-parser.add_argument("--img_height", type=int, default=644)
-parser.add_argument("--img_width", type=int, default=644)
-parser.add_argument("--depth", type=str2bool, default=False)
+parser.add_argument("--img_height", type=int, default=512) # 644
+parser.add_argument("--img_width", type=int, default=512) # 644
 
 parser.add_argument("--summary_freq", type=int, default=10)
 # parser.add_argument("--max_to_keep", type=int, default=5)
@@ -53,6 +61,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if USE_CUDA else 'cpu')
     if device=="cuda": torch.cuda.empty_cache()
     print('학습을 진행하는 기기:',device)
+    torch.cuda.set_per_process_memory_fraction(fraction=0.5, device=device)
     
     learner = DrivableLearner(args, device)
     learner.train()

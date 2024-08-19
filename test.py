@@ -40,16 +40,17 @@ def main():
     conf_mat = np.zeros((num_labels, num_labels), dtype=np.float64)
     for folder in folders:
         img_path = os.path.join(base_path, f'{folder}/image_data')
-        depth_path = os.path.join(base_path, f'{folder}/dense_depth')
         gt_path = os.path.join(base_path, f'{folder}/gt_image')
         
-        save_path = os.path.join(base_path, f'{folder}/{save_folder_name}')
+        save_path = os.path.join(save_base_path, save_folder_name)
         
         img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
 
         for i in tqdm(img_list):
             img_name = i
-            pseudo_label = cv2.imread(os.path.join(save_path, f'{img_name}'), cv2.IMREAD_GRAYSCALE) / 255
+            
+            pl_name = img_name.split('.')[0] + '_fillcolor.png' # '_fillcolor.png'
+            pseudo_label = cv2.imread(os.path.join(save_path, f'{pl_name}'), cv2.IMREAD_GRAYSCALE) / 255
             
             label_img_name = img_name.split('.')[0]+"_fillcolor.png"
             label_dir = os.path.join(gt_path, label_img_name)
@@ -61,7 +62,7 @@ def main():
             conf_mat += confusion_matrix(np.int_(label), np.int_(pseudo_label), num_labels)
 
     globalacc, pre, recall, F_score, iou = getScores(conf_mat)
-    print ('glob acc : {0:.3f}, pre : {1:.3f}, recall : {2:.3f}, F_score : {3:.3f}, IoU : {4:.3f}'.format(globalacc, pre, recall, F_score, iou))
+    print ('glob acc : {0:.3f}, pre : {1:.3f}, recall : {2:.3f}, F1_score : {3:.3f}, IoU : {4:.3f}'.format(globalacc, pre, recall, F_score, iou))
     
 if __name__ == "__main__":
     base_path = '/home/julio981007/HDD/orfd'
@@ -69,6 +70,8 @@ if __name__ == "__main__":
     folders = ['testing']
     num_labels=2
     
-    save_folder_name = 'pseudo_labeling'# 'pseudo_labeling_raw_depth'
+    # save_base_path = '/home/julio981007/HDD/inference'
+    save_base_path = os.path.join(base_path, folders[0])
+    save_folder_name = 'auto_labeling'# 'pseudo_labeling_raw_depth'
     
     main()

@@ -4,7 +4,9 @@
         - 00:00:00 ~ 00:00:40
         - 00:04:04 ~ 00:04:09
         - 00:05:39 ~ 00:05:48
-        - 00:06:06 ~ 00:05:48
+        - 00:06:06 ~ 00:07:45
+        - 00:10:13 ~ 00:10:30
+        - 00:13:43 ~ 00:10:30
 
     - 1 : https://www.youtube.com/watch?v=jl6EBf_48xM (Sunny, Wet, Brightness, Normal)
     - 2 : https://www.youtube.com/watch?v=bpUKOAPE0A0&t=66s (Sunny, Dry, Brightness, Normal)
