@@ -34,7 +34,7 @@ class DrivableLearner():
         
         num_patch = self.args.img_height // 14
         # model = DrivableNet(self.args.depth, num_patch, device=self.device)
-        model = UNet_small().to(device=self.device)
+        model = UNet().to(device=self.device)
         print(pytorch_model_summary.summary(model, torch.zeros(1, 3, self.args.img_height, self.args.img_width).to(device=self.device), show_input=True))
         
         optimizer_RoadSeg = torch.optim.Adam(model.parameters(), lr=self.args.learning_rate)

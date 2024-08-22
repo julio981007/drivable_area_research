@@ -49,7 +49,7 @@ def main():
         for i in tqdm(img_list):
             img_name = i
             
-            pl_name = img_name.split('.')[0] + '_fillcolor.png' # '_fillcolor.png'
+            pl_name = img_name.split('.')[0] + '.png' # '_fillcolor.png'
             pseudo_label = cv2.imread(os.path.join(save_path, f'{pl_name}'), cv2.IMREAD_GRAYSCALE) / 255
             
             label_img_name = img_name.split('.')[0]+"_fillcolor.png"
@@ -70,8 +70,8 @@ if __name__ == "__main__":
     folders = ['testing']
     num_labels=2
     
-    # save_base_path = '/home/julio981007/HDD/inference'
-    save_base_path = os.path.join(base_path, folders[0])
-    save_folder_name = 'auto_labeling'# 'pseudo_labeling_raw_depth'
+    save_base_path = '/home/julio981007/HDD/inference'
+    # save_base_path = os.path.join(base_path, folders[0])
+    save_folder_name = 'orfd_AL_unet(basic)_nodepth'# 'pseudo_labeling_raw_depth'
     
     main()

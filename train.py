@@ -20,16 +20,17 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd')
 parser.add_argument("--dataset_folders", type=str, required=False, nargs='+', default=['training']) # ['0', '1', '2', '3', '4', '5'] / ['training']
 
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawheight)_unet(small)_nodepth")
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawdepth)_unet(basic)_nodepth")
 
 parser.add_argument("--depth", type=str2bool, default=False)
 parser.add_argument("--gt_pl", type=str2bool, default=False)
 parser.add_argument("--labeling_folder", type=str, 
-        choices=['auto_labeling', 'auto_labeling_raw_depth', 'auto_labeling_minmax_depth', 'auto_labeling_std_depth', 'auto_labeling_raw_height'], default="auto_labeling_raw_height")
+        choices=['auto_labeling', 'auto_labeling_raw_depth', 'auto_labeling_minmax_depth', 'auto_labeling_std_depth', 'auto_labeling_raw_height'], 
+        default="auto_labeling_raw_depth")
 
 parser.add_argument("--patience", type=int, default=5)
 parser.add_argument("--learning_rate", type=float, default=1e-4, help='Learning rate of for adam')
-parser.add_argument("--batch_size", type=int, default=8)
+parser.add_argument("--batch_size", type=int, default=6)
 parser.add_argument("--num_epochs", type=int, default=30)
 
 parser.add_argument("--img_height", type=int, default=512) # 644

@@ -276,7 +276,7 @@ class UNet(nn.Module):
         x = self.sigmoid(x)
 
         return x
-    
+
 class UNet_small(nn.Module):
     def __init__(self):
         super(UNet_small, self).__init__()

@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from nets import DrivableNet, UNet_small
+from nets import DrivableNet, UNet_small, UNet
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -23,8 +23,8 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/testing')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawheight)_unet(small)_nodepth/model_20240815_110837_27")
-parser.add_argument("--save_folder", type=str, default="orfd_AL(rawheight)_unet(small)_nodepth")
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawdepth)_unet(basic)_nodepth/model_20240821_172344_23")
+parser.add_argument("--save_folder", type=str, default="orfd_AL(rawdepth)_unet(basic)_nodepth")
 parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference")
 
 parser.add_argument("--img_height", type=int, default=512) # 644
@@ -60,7 +60,7 @@ def main():
     
     checkpoint = torch.load(args.ckpt_dir)
     # model = DrivableNet(args.depth, num_patch, device=device)
-    model = UNet_small().to(device=device)
+    model = UNet().to(device=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     
     model.eval()
