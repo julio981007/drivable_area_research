@@ -23,8 +23,8 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/testing')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawdepth)_unet(basic)_nodepth/model_20240821_172344_23")
-parser.add_argument("--save_folder", type=str, default="orfd_AL(rawdepth)_unet(basic)_nodepth")
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(stddepth)_unet(basic)_nodepth/model_20240822_041745_23")
+parser.add_argument("--save_folder", type=str, default="orfd_AL(stddepth)_unet(basic)_nodepth")
 parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference")
 
 parser.add_argument("--img_height", type=int, default=512) # 644

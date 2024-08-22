@@ -72,6 +72,6 @@ if __name__ == "__main__":
     
     save_base_path = '/home/julio981007/HDD/inference'
     # save_base_path = os.path.join(base_path, folders[0])
-    save_folder_name = 'orfd_AL_unet(basic)_nodepth'# 'pseudo_labeling_raw_depth'
+    save_folder_name = 'orfd_AL(minmaxdepth)_unet(basic)_nodepth'# 'pseudo_labeling_raw_depth'
     
     main()
