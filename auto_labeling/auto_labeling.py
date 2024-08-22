@@ -174,8 +174,8 @@ def main():
         img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
         with torch.no_grad():
             for i in tqdm(img_list):
-                if i!='1620330540720.png':
-                    continue
+                # if i!='1620330540720.png':
+                #     continue
                 img_name = i
                 img = Image.open(os.path.join(img_path, f'{img_name}')).convert('RGB')
                 img_np = np.array(img)
@@ -188,12 +188,12 @@ def main():
                 # depth_np = np.expand_dims(depth_np, axis=0)
                 depth_np = None
                 
-                height = cv2.imread(os.path.join(height_path, img_name.replace('png', 'tiff')), cv2.IMREAD_UNCHANGED)
-                height = cv2.resize(height, (box_size, box_size), interpolation=cv2.INTER_NEAREST)
-                height_np = np.array(height)
-                height_np = height_np*20 # (height_np-height_np.mean())/(height_np.std()) # (height_np - np.min(height_np)) / (np.max(height_np) - np.min(height_np))
-                height_np = np.expand_dims(height_np, axis=0)
-                depth_np = height_np
+                # height = cv2.imread(os.path.join(height_path, img_name.replace('png', 'tiff')), cv2.IMREAD_UNCHANGED)
+                # height = cv2.resize(height, (box_size, box_size), interpolation=cv2.INTER_NEAREST)
+                # height_np = np.array(height)
+                # height_np = height_np*20 # (height_np-height_np.mean())/(height_np.std()) # (height_np - np.min(height_np)) / (np.max(height_np) - np.min(height_np))
+                # height_np = np.expand_dims(height_np, axis=0)
+                # depth_np = height_np
                 
                 inputs = processor(images=img_np, return_tensors="pt", do_normalize=False)
                 output_size = int(inputs.pixel_values[0].shape[1]/grid_size)
@@ -212,14 +212,10 @@ def main():
                         crf_drivable_map = fine_drivable(img, depth_np, model_output, flatten_indices, img_size, img_size, (output_size, output_size), j)
                     else:
                         flatten_indices1 = find_drivable_indices(box_size, crf_drivable_map)
-                        crf_drivable_map1 = fine_drivable(img, depth_np, model_output, flatten_indices1, oriHeight, oriWidth, (output_size, output_size), j)
-                
-                plt.imshow(crf_drivable_map1)
-                plt.colorbar()
-                plt.show()
-                sys.exit()
+                        crf_drivable_map = fine_drivable(img, depth_np, model_output, flatten_indices1, oriHeight, oriWidth, (output_size, output_size), j)
 
-                cv2.imwrite(filename=os.path.join(save_path, img_name.split('.')[0]+'_fillcolor.png'), img=(crf_drivable_map1*255))
+                resized = cv2.resize(crf_drivable_map, (oriWidth, oriHeight), interpolation=cv2.INTER_NEAREST)
+                cv2.imwrite(filename=os.path.join(save_path, img_name.split('.')[0]+'_fillcolor.png'), img=(resized*255))
                 
                 if dataset=='gurka':
                     continue
@@ -230,7 +226,7 @@ def main():
                 label = np.zeros((oriHeight, oriWidth), dtype=np.uint8)
                 label[label_image[:,:,2] > 200] = 1
                 
-                conf_mat += confusion_matrix(np.int_(label), np.int_(crf_drivable_map1), num_labels)
+                conf_mat += confusion_matrix(np.int_(label), np.int_(resized), num_labels)
 
     globalacc, pre, recall, F_score, iou = getScores(conf_mat)
     print ('glob acc : {0:.3f}, pre : {1:.3f}, recall : {2:.3f}, F_score : {3:.3f}, IoU : {4:.3f}'.format(globalacc, pre, recall, F_score, iou))
@@ -250,7 +246,7 @@ if __name__ == "__main__":
     grid_size = 14
     box_size = img_size // grid_size  # num of grid per row and column
     num_labels = 2 # Drivable / Non-drivable
-    num_iter = 2
+    num_iter = 1
     
     dataset = 'orfd' # orfd, gurka
     base_path = f'/home/julio981007/HDD/{dataset}'
@@ -258,6 +254,6 @@ if __name__ == "__main__":
     folders = ['training', 'testing', 'validation']
     folders = ['training']
     
-    save_folder_name = 'tmp' # auto_labeling / auto_labeling_raw_depth
+    save_folder_name = 'auto_labeling_iter_1' # auto_labeling / auto_labeling_raw_depth
     
     main()
