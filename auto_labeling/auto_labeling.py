@@ -200,9 +200,6 @@ def main():
                 
                 model_input = inputs.pixel_values.to(device)
                 model_output = dinov2_vitg14.get_intermediate_layers(model_input)[0]#.cpu().numpy()
-                print(model_output.min(), model_output.max())
-                print(model_output.mean())
-                sys.exit()
                 
                 # min_vals = model_output.min(dim=-1, keepdim=True).values
                 # max_vals = model_output.max(dim=-1, keepdim=True).values
