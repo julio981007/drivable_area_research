@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd')
 parser.add_argument("--dataset_folders", type=str, required=False, nargs='+', default=['training']) # ['0', '1', '2', '3', '4', '5'] / ['training']
 
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawdepth)_unet(basic)_nodepth")
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/tmp") # orfd_AL(rawdepth)_unet(basic)_nodepth
 
 parser.add_argument("--depth", type=str2bool, default=False)
 parser.add_argument("--gt_pl", type=str2bool, default=False)

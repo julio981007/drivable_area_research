@@ -8,6 +8,7 @@ from torchvision import transforms
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import time
 
 from nets import DrivableNet, UNet_small, UNet
 
@@ -23,8 +24,8 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/testing')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(stddepth)_unet(basic)_nodepth/model_20240822_041745_23")
-parser.add_argument("--save_folder", type=str, default="orfd_AL(stddepth)_unet(basic)_nodepth")
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawheight)_unet(small)_nodepth/model_20240815_110837_27")
+parser.add_argument("--save_folder", type=str, default="tmp") # orfd_AL(rawheight)_unet(basic)_nodepth
 parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference")
 
 parser.add_argument("--img_height", type=int, default=512) # 644
@@ -60,7 +61,7 @@ def main():
     
     checkpoint = torch.load(args.ckpt_dir)
     # model = DrivableNet(args.depth, num_patch, device=device)
-    model = UNet().to(device=device)
+    model = UNet_small().to(device=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     
     model.eval()
@@ -73,6 +74,7 @@ def main():
     makedirs(save_path)
     print(save_path)
     
+    time_arr=[]
     for img in tqdm(img_list):
         img_path = os.path.join(img_folder, img)
         
@@ -90,14 +92,19 @@ def main():
         #     depth = depth_transform(depth)
         # if not isinstance(depth, torch.Tensor):
         #     depth = transforms.ToTensor()(depth)
-        
-        image = image.to(device)
-        out = model(image)
-        out = F.interpolate(out, size=raw_image.shape[:2], mode='nearest')# , align_corners=True)
-        out = (out >= torch.FloatTensor([0.5]).to(device))
+        for i in range(100):
+            start_time = time.time()
+            image = image.to(device)
+            out = model(image)
+            out = F.interpolate(out, size=raw_image.shape[:2], mode='nearest')# , align_corners=True)
+            out = (out >= torch.FloatTensor([0.5]).to(device))
+            time_arr.append(time.time() - start_time)
+        break
         out_numpy = out.permute(0, 2, 3, 1).detach().cpu().numpy()[0]
         
         cv2.imwrite(filename=os.path.join(save_path, f'{img}'), img=(out_numpy*255))
+    arr = np.array(time_arr[1:])
+    print(arr.mean(), arr.std())
 
 if __name__ == '__main__':
     os.environ["XFORMERS_DISABLED"] = "1" # Switch to enable xFormers
