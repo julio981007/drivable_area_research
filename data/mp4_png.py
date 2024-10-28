@@ -24,7 +24,7 @@ def main():
 
         with tqdm(total=total_frames, desc="Processing frames") as pbar:
             while success:
-                if frame_count % (video_fps/10) == 0:  # 3프레임마다 한 번씩 이미지 저장 (30fps -> 10fps)
+                if frame_count % (video_fps/10) == 0:  # 10 FPS 이미지 저장 (?fps -> 10fps)
                     cv2.imwrite(os.path.join(save_path, "%06d.png") % count, image)
                     count += 1
                     # print('Saved frame:', count)

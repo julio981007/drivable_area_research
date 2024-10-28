@@ -47,10 +47,17 @@ def main():
         img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
 
         for i in tqdm(img_list):
+            # if ((1623175227755<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623458407582))|((1623721491895<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623721600330)): # 1623175308229
+            #     continue
             img_name = i
             
             pl_name = img_name.split('.')[0] + '_fillcolor.png' # '_fillcolor.png'
             pseudo_label = cv2.imread(os.path.join(save_path, f'{pl_name}'), cv2.IMREAD_GRAYSCALE) / 255
+            pseudo_label[:200, :] = 0
+            # plt.imshow(pseudo_label)
+            # plt.colorbar()
+            # plt.show()
+            # sys.exit()
             
             label_img_name = img_name.split('.')[0]+"_fillcolor.png"
             label_dir = os.path.join(gt_path, label_img_name)
@@ -58,6 +65,7 @@ def main():
             oriHeight, oriWidth = label_image.shape[:2]
             label = np.zeros((oriHeight, oriWidth), dtype=np.uint8)
             label[label_image[:,:,2] > 200] = 1
+            label[:200, :] = 0
             
             conf_mat += confusion_matrix(np.int_(label), np.int_(pseudo_label), num_labels)
 
@@ -72,6 +80,6 @@ if __name__ == "__main__":
     
     # save_base_path = '/home/julio981007/HDD/inference'
     save_base_path = os.path.join(base_path, folders[0])
-    save_folder_name = 'auto_labeling_iter_5_crfx'# 'pseudo_labeling_raw_depth'
+    save_folder_name = 'auto_labeling_raw_planarity_v2_01'# 'pseudo_labeling_raw_depth'
     
     main()

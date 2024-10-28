@@ -10,11 +10,14 @@ from torch.utils.tensorboard import SummaryWriter
 import pytorch_model_summary
 from datetime import datetime
 import matplotlib.pyplot as plt
+from torchinfo import summary
 
 from data_load import get_train_dataloaders, undo_transform
 from visualize import visualize_data
-from nets import DrivableNet, UNet, UNet_small
+from nets import DrivableNet, UNet, UNet_small, LeNetSegmentation, DAS_ESPNet, ESPNet
 from loss import SegmantationLoss
+from DeepLabV3Plus import network
+import segmentation_models_pytorch as smp
 
 class DrivableLearner():
     def __init__(self, args, device):
@@ -29,13 +32,23 @@ class DrivableLearner():
                                                          img_height=self.args.img_height, img_width=self.args.img_width, 
                                                          gt_pl=self.args.gt_pl,
                                                          labeling_folder=self.args.labeling_folder,
+                                                         remove_sky=self.args.remove_sky,
                                                          depth=self.args.depth, 
                                                          batch_size=self.args.batch_size)
         
         num_patch = self.args.img_height // 14
+        model = ESPNet().to(device=self.device)
         # model = DrivableNet(self.args.depth, num_patch, device=self.device)
-        model = UNet().to(device=self.device)
-        print(pytorch_model_summary.summary(model, torch.zeros(1, 3, self.args.img_height, self.args.img_width).to(device=self.device), show_input=True))
+        # model = network.modeling.__dict__['deeplabv3plus_mobilenet'](num_classes=1, output_stride=16).to(device=self.device)
+        # model = smp.Unet(
+        #     encoder_name="efficientnet-b0",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
+        #     encoder_weights=None,     # use `imagenet` pre-trained weights for encoder initialization
+        #     in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+        #     classes=1,                      # model output channels (number of classes in your dataset)
+        # )
+        # model = LeNetSegmentation(1).to(device=self.device)
+        # model = DAS_ESPNet(1).to(device=self.device)
+        summary(model, input_size=(1, 3, self.args.img_height, self.args.img_width))
         
         optimizer_RoadSeg = torch.optim.Adam(model.parameters(), lr=self.args.learning_rate)
         # scheduler = optim.lr_scheduler.LambdaLR(optimizer=optimizer_RoadSeg,
@@ -44,7 +57,8 @@ class DrivableLearner():
         #                                 verbose=False)
         
         # criterionSegmentation = SegmantationLoss(class_weights=None).to(self.device)
-        criterion = torch.nn.BCELoss().to(self.device)
+        # criterion = torch.nn.BCELoss().to(self.device)
+        criterion = torch.nn.BCEWithLogitsLoss().to(self.device)
         
         best_vloss = 1000000.
         patience_cnt=0
@@ -102,9 +116,10 @@ class DrivableLearner():
                     val_step+=1
             
             train_cost = train_running_loss / len(train_loader)
-            self.writer.add_scalar("Loss/train", train_cost, epoch)
             val_cost = val_running_loss / len(val_loader)
-            self.writer.add_scalar("Loss/val", val_cost, epoch)
+            self.writer.add_scalars("Epoch Loss", {'train':train_cost,
+                                                'val':val_cost
+                                                }, epoch)
             print('[%d] train loss: %.3f / val loss: %.3f' %(epoch, train_cost, val_cost))
             
             self.writer.flush()

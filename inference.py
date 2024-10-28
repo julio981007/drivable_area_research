@@ -9,8 +9,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
+from torchinfo import summary
+from torch import nn
 
-from nets import DrivableNet, UNet_small, UNet
+from nets import DrivableNet, UNet_small, UNet, DAS_ESPNet, ESPNet
+from DeepLabV3Plus import network
+import segmentation_models_pytorch as smp
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -24,12 +28,12 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/testing')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL(rawheight)_unet(small)_nodepth/model_20240815_110837_27")
-parser.add_argument("--save_folder", type=str, default="tmp") # orfd_AL(rawheight)_unet(basic)_nodepth
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL_ESPNet(basic_p2q5)/model_20241020_183701_49")
+parser.add_argument("--save_folder", type=str, default="orfd_AL_ESPNet(basic_p2q5)") # orfd_AL(rawheight)_unet(basic)_nodepth
 parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference")
 
-parser.add_argument("--img_height", type=int, default=512) # 644
-parser.add_argument("--img_width", type=int, default=512) # 644
+parser.add_argument("--img_height", type=int, default=512) # 512
+parser.add_argument("--img_width", type=int, default=512) # 512
 parser.add_argument("--depth", type=str2bool, default=False)
 
 args = parser.parse_args()
@@ -61,8 +65,20 @@ def main():
     
     checkpoint = torch.load(args.ckpt_dir)
     # model = DrivableNet(args.depth, num_patch, device=device)
-    model = UNet_small().to(device=device)
+    
+    # model = UNet_small().to(device=device)
+    # model = network.modeling.__dict__['deeplabv3plus_resnet50'](num_classes=1, output_stride=16).to(device=device)
+    # model = smp.Unet(
+    #         encoder_name="efficientnet-b0",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
+    #         encoder_weights=None,     # use `imagenet` pre-trained weights for encoder initialization
+    #         in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+    #         classes=1,                      # model output channels (number of classes in your dataset)
+    #     ).to(device=device)
+    # model = DAS_ESPNet(1).to(device=device)
+    model = ESPNet().to(device=device)
     model.load_state_dict(checkpoint['model_state_dict'])
+    summary(model, input_size=(1, 3, args.img_height, args.img_width))
+    # sys.exit()
     
     model.eval()
     ######################################################################
@@ -80,7 +96,9 @@ def main():
         
         raw_image = cv2.imread(img_path)
         image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
-        image = transforms.ToPILImage()(image)
+        image = np.array(image)
+        
+        # image = transforms.ToPILImage()(image)
         
         image = make_rgb_transform(image)
         if not isinstance(image, torch.Tensor):
@@ -92,19 +110,15 @@ def main():
         #     depth = depth_transform(depth)
         # if not isinstance(depth, torch.Tensor):
         #     depth = transforms.ToTensor()(depth)
-        for i in range(100):
-            start_time = time.time()
-            image = image.to(device)
-            out = model(image)
-            out = F.interpolate(out, size=raw_image.shape[:2], mode='nearest')# , align_corners=True)
-            out = (out >= torch.FloatTensor([0.5]).to(device))
-            time_arr.append(time.time() - start_time)
-        break
+        image = image.to(device)
+        out = model(image)
+        out = nn.Sigmoid()(out)
+        out = F.interpolate(out, size=raw_image.shape[:2], mode='nearest')# , align_corners=True)
+        out = (out >= torch.FloatTensor([0.5]).to(device))
         out_numpy = out.permute(0, 2, 3, 1).detach().cpu().numpy()[0]
         
         cv2.imwrite(filename=os.path.join(save_path, f'{img}'), img=(out_numpy*255))
     arr = np.array(time_arr[1:])
-    print(arr.mean(), arr.std())
 
 if __name__ == '__main__':
     os.environ["XFORMERS_DISABLED"] = "1" # Switch to enable xFormers

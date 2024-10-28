@@ -50,7 +50,7 @@ def detect_traversable_region(range_image, vertical_angles, horizontal_angles, d
     Returns:
     numpy array: Binary map indicating traversable regions.
     """
-    # plt.imshow(horizontal_angles)
+    # plt.imshow(vertical_angles)
     # plt.colorbar()
     # plt.show()
     # sys.exit()
@@ -99,9 +99,14 @@ if __name__ == '__main__':
     
     # Example usage
     range_image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    # plt.imshow(range_image)
+    # plt.colorbar()
+    # plt.show()
+    # sys.exit()
+    
     # range_image = np.random.uniform(0, 100, (64, 360))  # Example range image (64 vertical layers, 360 horizontal points)
-    theta_v = 0.4  # Vertical resolution in degrees
-    theta_h = 1.0  # Horizontal resolution in degrees
+    theta_v = 1.0  # Vertical resolution in degrees # 0.4
+    theta_h = 0.2  # Horizontal resolution in degrees # 1.0
 
     # Step 1: Calculate angles
     vertical_angles, horizontal_angles = calculate_angles(range_image, theta_v, theta_h)
@@ -112,13 +117,13 @@ if __name__ == '__main__':
     traversable_map = detect_traversable_region(range_image, vertical_angles, horizontal_angles, delta_alpha=0.0001, delta_beta=0.01, max_distance=max_distance, min_vertical_angle=min_vertical_angle) # 0.3
 
     # Step 3: Calculate confidence of traversability
-    phi = 0.5  # Midpoint for slope determination
-    k = 10  # Logistic growth rate for slope range
+    phi = 10  # Midpoint for slope determination # 0.5
+    k = 10  # Logistic growth rate for slope range # 10
     confidence_map = calculate_confidence(traversable_map, vertical_angles, horizontal_angles, 0.3, 0.3, phi, k)
 
     print(np.unique(confidence_map))
     print(confidence_map.min(), confidence_map.max())
-    plt.imshow(confidence_map)
+    plt.imshow(horizontal_angles)
     plt.colorbar()
     plt.show()
     sys.exit()

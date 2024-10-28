@@ -67,9 +67,10 @@ def custom_collate_fn(batch):
     return img, depth, pcd, gt
 
 class DrivableAreaDataset(Dataset):
-    def __init__(self, base_dir, folders, gt_pl, labeling_folder, transform=None, depth=False):
+    def __init__(self, base_dir, folders, gt_pl, labeling_folder, remove_sky, transform=None, depth=False):
         self.gt_pl = gt_pl
         self.labeling_folder = labeling_folder
+        self.remove_sky = remove_sky
         
         self.all_samples = []
         
@@ -153,14 +154,16 @@ class DrivableAreaDataset(Dataset):
         gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2GRAY)
         gt_image = np.array(gt_image)
         gt_image[gt_image<255] = 0
+        if self.remove_sky:
+            gt_image[:200, :] = 0
         gt_tensor = transforms.ToTensor()(gt_image)
 
         return image, depth, lidar_tensor, gt_tensor
 
-def get_train_dataloaders(base_dir, dataset_folders, img_height, img_width, gt_pl, labeling_folder, depth, batch_size=1, num_workers=0):
+def get_train_dataloaders(base_dir, dataset_folders, img_height, img_width, gt_pl, labeling_folder, remove_sky, depth, batch_size=1, num_workers=0):
     rgb_transform = make_rgb_transform(smaller_edge_size=(img_height, img_width))
     depth_transform = make_depth_transform(smaller_edge_size=(img_height, img_width))
-    train_dataset = DrivableAreaDataset(base_dir, dataset_folders, gt_pl=gt_pl, labeling_folder=labeling_folder, transform=(rgb_transform, depth_transform), depth=depth)
+    train_dataset = DrivableAreaDataset(base_dir, dataset_folders, gt_pl=gt_pl, labeling_folder=labeling_folder, remove_sky=remove_sky, transform=(rgb_transform, depth_transform), depth=depth)
     
     train_size = int(0.8 * len(train_dataset))
     val_size = len(train_dataset) - train_size
@@ -168,8 +171,8 @@ def get_train_dataloaders(base_dir, dataset_folders, img_height, img_width, gt_p
     train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
     
     # val_dataset = DrivableAreaDataset(base_dir, 'validation', gt_pl=gt_pl, labeling_folder=labeling_folder, transform=(rgb_transform, depth_transform), depth=depth)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=custom_collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=custom_collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=custom_collate_fn, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=custom_collate_fn, drop_last=True)
     return train_loader, val_loader
 
 '''

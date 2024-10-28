@@ -49,8 +49,9 @@ if __name__=='__main__':
             'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
         }
     
-    base_path = '/home/julio981007/HDD/orfd'
+    base_path = '/home/julio981007/HDD/HDX'
     folders = ['training', 'testing', 'validation'] # ['1', '2', '3', '4', '5']
+    folders = ['testing']
     save_folder_name = 'dense_depth_anything'
     
     encoder = 'vitl' # or 'vits', 'vitb', 'vitg'
