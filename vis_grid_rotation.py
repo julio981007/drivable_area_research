@@ -186,6 +186,6 @@ def create_gridmap_and_visualize(json_path, grid_size=50, resolution=0.5):
     plt.show()
 
 # 실행 코드
-json_file = "/mnt/HDD/HDX/senario_5_preds/1728352330.176256418.json"
+json_file = "/home/julio981007/HDD/HDX/senario_5_preds/1728352330.176256418.json"
 
 create_gridmap_and_visualize(json_file)

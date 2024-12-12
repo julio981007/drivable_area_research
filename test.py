@@ -12,9 +12,6 @@ import cv2
 from glob import glob
 from tqdm import tqdm
 import time
-import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_labels
-from transformers import AutoImageProcessor, AutoModel
 
 def confusion_matrix(x, y, n, ignore_label=None, mask=None):
     if mask is None:
@@ -47,11 +44,13 @@ def main():
         img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
 
         for i in tqdm(img_list):
-            # if ((1623175227755<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623458407582))|((1623721491895<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623721600330)): # 1623175308229
+            # if not ((1623175227755<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623458407582))|((1623721491895<=int(i.split('.')[0]))&(int(i.split('.')[0])<=1623721600330)): # 1623175308229
             #     continue
             img_name = i
             
-            pl_name = img_name.split('.')[0] + '_fillcolor.png' # '_fillcolor.png'
+            pl_name = img_name.split('.')[0] + '.png' # '_fillcolor.png'
+            # if not os.path.isfile(os.path.join(save_path, f'{pl_name}')):
+            #     continue
             pseudo_label = cv2.imread(os.path.join(save_path, f'{pl_name}'), cv2.IMREAD_GRAYSCALE) / 255
             pseudo_label[:200, :] = 0
             # plt.imshow(pseudo_label)
@@ -78,8 +77,8 @@ if __name__ == "__main__":
     folders = ['testing']
     num_labels=2
     
-    # save_base_path = '/home/julio981007/HDD/inference'
-    save_base_path = os.path.join(base_path, folders[0])
-    save_folder_name = 'auto_labeling_raw_planarity_v2_01'# 'pseudo_labeling_raw_depth'
+    save_base_path = '/home/julio981007/HDD/inference'
+    # save_base_path = os.path.join(base_path, folders[0])
+    save_folder_name = 'orfd_AL_ESPNet(v2_p6q16r4)'
     
     main()

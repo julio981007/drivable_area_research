@@ -214,16 +214,17 @@ class VoxelPlanarityCalculator:
         for voxel_index, voxel_points in voxel_dict.items():
             voxel_points = np.array(voxel_points)
             
-            if len(voxel_points) > 3: # 10
+            if len(voxel_points) > 4: # 10
                 points_mean = np.mean(voxel_points, axis=0)
                 centered_points = voxel_points - points_mean
 
                 cov_matrix = np.cov(centered_points, rowvar=False)
-                eigenvalues, _ = np.linalg.eigh(cov_matrix)
+                eigenvalues, _ = np.linalg.eig(cov_matrix)
                 eigenvalues = np.sort(eigenvalues)[::-1]
-
-                # planarity = min(((eigenvalues[1] - eigenvalues[2]) * 2) / eigenvalues[0], 1.0) if eigenvalues[0] > 0 else 0
-                planarity = 6 - (((eigenvalues[1] - eigenvalues[2]) * 2) / eigenvalues[0])
+                print(eigenvalues)
+                planarity = (((eigenvalues[1] - eigenvalues[2])) / eigenvalues[0]) if eigenvalues[2] > 0 else 0
+                # planarity = min(((eigenvalues[1] - eigenvalues[2]) * 2) / eigenvalues[0], 1.0) if eigenvalues[2] > 0 else 0
+                # planarity = 6 - (((eigenvalues[1] - eigenvalues[2]) * 2) / eigenvalues[0])
             else:
                 planarity = 0
 
@@ -253,12 +254,15 @@ class VoxelPlanarityCalculator:
         pcd.colors = o3d.utility.Vector3dVector(np.array(colors))
 
         # save
-        # o3d.visualization.draw_geometries([pcd])
+        o3d.visualization.draw_geometries([pcd])
 
         # 저장
         pcd_np = np.asarray(pcd.points)
         colors_np = np.asarray(colors)
         planarity_np = np.asarray(planarity_arr)
+        print(planarity_np.min(), planarity_np.max())
+        print(planarity_np.mean())
+        sys.exit()
         
         return pcd_np, colors_np, planarity_np
     

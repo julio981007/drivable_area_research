@@ -124,15 +124,18 @@ def fine_drivable(img, depth, lidar_drivable_map, model_output, flatten_indices,
             # depth_np = depth.detach().cpu().numpy()
     
     # norm_cosine = cosine_sim / torch.max(cosine_sim)
-    
+    plt.imshow(lidar_drivable_map)
+    plt.colorbar()
+    plt.show()
+    sys.exit()
     pcd_drivable = torch.zeros_like(cosine_sim)
     if lidar_drivable_map is not None:
         pcd_drivable = cv2.resize(lidar_drivable_map, (box_size, box_size), interpolation=cv2.INTER_NEAREST)
         pcd_drivable = torch.from_numpy(pcd_drivable).to(device)
         pcd_drivable = torch.flatten(pcd_drivable, start_dim=0, end_dim=1)
-        # pcd_drivable = pcd_drivable / torch.max(pcd_drivable)
+        pcd_drivable = pcd_drivable / torch.max(pcd_drivable)
     
-    final_norm_cosine = cosine_sim + depth_norm_cosine + 0.01*pcd_drivable
+    final_norm_cosine = cosine_sim + depth_norm_cosine + 0.1*pcd_drivable
     final_norm_cosine = final_norm_cosine / torch.max(final_norm_cosine)
     
     threshold_norm_cosine = final_norm_cosine.clone()
@@ -362,7 +365,7 @@ if __name__ == "__main__":
     torch.cuda.set_per_process_memory_fraction(fraction=0.5, device=device)
     
     img_size = 644
-    max_depth = 70
+    max_depth = 50
     threshold = 0.55 # orfd : 0.55 / gurka : 0.6
     planarity_threshold = 1.0
     offset = 0.3
@@ -378,7 +381,7 @@ if __name__ == "__main__":
     folders = ['training', 'testing', 'validation']
     folders = ['testing']
     
-    save_folder_name = 'auto_labeling_raw_planarity_v3_001' # auto_labeling / auto_labeling_raw_depth
+    save_folder_name = 'auto_labeling_raw_planarity_v4_01' # auto_labeling / auto_labeling_raw_depth
     extra_modality = False
     CRF = True
     

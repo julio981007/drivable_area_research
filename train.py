@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd')
 parser.add_argument("--dataset_folders", type=str, required=False, nargs='+', default=['training']) # ['0', '1', '2', '3', '4', '5'] / ['training']
 
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL_ESPNet(basic_p2q5)") # orfd_AL(rawdepth)_unet(basic)_nodepth
+parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL_ESPNet(v2_p6q16r4)/") # orfd_AL(rawdepth)_unet(basic)_nodepth
 
 parser.add_argument("--depth", type=str2bool, default=False)
 parser.add_argument("--gt_pl", type=str2bool, default=False)
@@ -30,9 +30,9 @@ parser.add_argument("--labeling_folder", type=str,
         default="auto_labeling")
 
 parser.add_argument("--patience", type=int, default=10)
-parser.add_argument("--learning_rate", type=float, default=1e-4, help='Learning rate of for adam')
-parser.add_argument("--batch_size", type=int, default=16) # 8
-parser.add_argument("--num_epochs", type=int, default=50)
+parser.add_argument("--learning_rate", type=float, default=5e-4, help='Learning rate of for adam')
+parser.add_argument("--batch_size", type=int, default=8) # 8
+parser.add_argument("--num_epochs", type=int, default=200)
 
 parser.add_argument("--img_height", type=int, default=512) # 512
 parser.add_argument("--img_width", type=int, default=512) # 512

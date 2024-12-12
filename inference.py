@@ -12,7 +12,8 @@ import time
 from torchinfo import summary
 from torch import nn
 
-from nets import DrivableNet, UNet_small, UNet, DAS_ESPNet, ESPNet
+from nets import DrivableNet, UNet_small, UNet, DAS_ESPNet
+from ESPNet import ESPNet
 from DeepLabV3Plus import network
 import segmentation_models_pytorch as smp
 
@@ -27,10 +28,10 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/testing')
-parser.add_argument("--ckpt_dir", type=str, default="./checkpoints/orfd_AL_ESPNet(basic_p2q5)/model_20241020_183701_49")
-parser.add_argument("--save_folder", type=str, default="orfd_AL_ESPNet(basic_p2q5)") # orfd_AL(rawheight)_unet(basic)_nodepth
-parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference")
+parser.add_argument("--dataset_dir", type=str, required=False, default='/home/julio981007/HDD/orfd/training')
+parser.add_argument("--ckpt_dir", type=str, default="/home/julio981007/drivable_area_research/checkpoints/orfd_AL_ESPNet(v2_p6q16r4)/model_20241118_142345")
+parser.add_argument("--save_folder", type=str, default="orfd_AL_ESPNet(v2_p6q16r4)") # orfd_AL(rawheight)_unet(basic)_nodepth
+parser.add_argument("--save_dir", type=str, default="/home/julio981007/HDD/inference/tmp")
 
 parser.add_argument("--img_height", type=int, default=512) # 512
 parser.add_argument("--img_width", type=int, default=512) # 512
@@ -78,7 +79,6 @@ def main():
     model = ESPNet().to(device=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     summary(model, input_size=(1, 3, args.img_height, args.img_width))
-    # sys.exit()
     
     model.eval()
     ######################################################################
@@ -92,6 +92,8 @@ def main():
     
     time_arr=[]
     for img in tqdm(img_list):
+        if '1623170236792.png' != img:
+            continue
         img_path = os.path.join(img_folder, img)
         
         raw_image = cv2.imread(img_path)
@@ -112,13 +114,14 @@ def main():
         #     depth = transforms.ToTensor()(depth)
         image = image.to(device)
         out = model(image)
-        out = nn.Sigmoid()(out)
         out = F.interpolate(out, size=raw_image.shape[:2], mode='nearest')# , align_corners=True)
         out = (out >= torch.FloatTensor([0.5]).to(device))
         out_numpy = out.permute(0, 2, 3, 1).detach().cpu().numpy()[0]
         
         cv2.imwrite(filename=os.path.join(save_path, f'{img}'), img=(out_numpy*255))
     arr = np.array(time_arr[1:])
+    # print(arr.mean())
+    # print(arr.std())
 
 if __name__ == '__main__':
     os.environ["XFORMERS_DISABLED"] = "1" # Switch to enable xFormers

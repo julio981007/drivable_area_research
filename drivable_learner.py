@@ -14,7 +14,8 @@ from torchinfo import summary
 
 from data_load import get_train_dataloaders, undo_transform
 from visualize import visualize_data
-from nets import DrivableNet, UNet, UNet_small, LeNetSegmentation, DAS_ESPNet, ESPNet
+from nets import DrivableNet, UNet, UNet_small, LeNetSegmentation, DAS_ESPNet
+from ESPNet import ESPNet
 from loss import SegmantationLoss
 from DeepLabV3Plus import network
 import segmentation_models_pytorch as smp
@@ -57,14 +58,14 @@ class DrivableLearner():
         #                                 verbose=False)
         
         # criterionSegmentation = SegmantationLoss(class_weights=None).to(self.device)
-        # criterion = torch.nn.BCELoss().to(self.device)
-        criterion = torch.nn.BCEWithLogitsLoss().to(self.device)
+        criterion = torch.nn.BCELoss().to(self.device)
+        # criterion = torch.nn.BCEWithLogitsLoss().to(self.device)
         
         best_vloss = 1000000.
         patience_cnt=0
         train_step = 0
         val_step = 0
-        for epoch in tqdm(range(self.args.num_epochs)):
+        for epoch in tqdm(range(1, self.args.num_epochs+1)):
             train_running_loss = 0.0
             for i, (img, depth, pcd, gt) in enumerate(tqdm(train_loader)):
                 img = img.to(self.device)
@@ -126,7 +127,7 @@ class DrivableLearner():
             if val_cost < best_vloss:
                 patience_cnt = 0
                 best_vloss = val_cost
-                model_path = os.path.join(self.args.ckpt_dir, 'model_{}_{}'.format(self.timestamp, epoch))
+                model_path = os.path.join(self.args.ckpt_dir, 'model_{}'.format(self.timestamp))
                 torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),

@@ -273,7 +273,7 @@ class UNet(nn.Module):
         dec1_1 = self.dec1_1(dec1_2)
 
         x = self.fc(dec1_1)
-        # x = self.sigmoid(x)
+        x = self.sigmoid(x)
 
         return x
 
@@ -372,7 +372,7 @@ class UNet_small(nn.Module):
         dec1_1 = self.dec1_1(dec1_2)
 
         output = self.fc(dec1_1)
-        # output = self.sigmoid(output)
+        output = self.sigmoid(output)
 
         return output
 
@@ -437,7 +437,7 @@ class LeNetSegmentation(nn.Module):
         x = F.tanh(self.deconv1(x)) # Upsampling step (64x64)
         x = F.tanh(self.deconv2(x)) # Upsampling step (128x128)
         x = self.deconv3(x) # Final output (512x512)
-        # x = self.sigmoid(x)
+        x = self.sigmoid(x)
         
         return x
     
@@ -497,9 +497,10 @@ class DAS_ESPNet(nn.Module):
         concat2 = x
         concat = torch.cat((concat1, concat2), 1)
         output = self.final_conv(concat)
-        # output = self.sigmoid(output)
+        output = self.sigmoid(output)
         return output
 ################################################################################################################
+"""
 class CBR(nn.Module):
     '''
     This class defines the convolution layer with batch normalization and PReLU activation
@@ -815,7 +816,7 @@ class ESPNet(nn.Module):
     This class defines the ESPNet network
     '''
 
-    def __init__(self, classes=1, p=2, q=5, encoderFile=None):
+    def __init__(self, classes=1, p=6, q=10, encoderFile=None):
         '''
         :param classes: number of classes in the dataset. Default is 20 for the cityscapes
         :param p: depth multiplier
@@ -885,3 +886,4 @@ class ESPNet(nn.Module):
         classifier = self.classifier(concat_features)
         # classifier = self.sigmoid(classifier)
         return classifier
+"""
