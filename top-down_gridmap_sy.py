@@ -5,6 +5,8 @@ import sys
 import open3d as o3d
 import os
 import matplotlib.colors as mcolors
+from scipy.interpolate import griddata
+from scipy.ndimage import gaussian_filter
 
 class Depth2Voxel:
     def __init__(self, calibration_file):
@@ -70,7 +72,6 @@ if __name__ == '__main__':
     img_list = [file for file in os.listdir(img_path) if file.endswith('.png')]
     
     for file_name in img_list:
-        print(file_name)
         file_name = file_name.split('.')[0]
         calibration_file = f"/home/julio981007/HDD/HDX/calib.txt"
         # depth_map_file = f"/home/julio981007/HDD/orfd/training/dense_depth_anything/{file_name}.png"
@@ -133,9 +134,23 @@ if __name__ == '__main__':
                     if 0 <= grid_x < gridmap.shape[1] and 0 <= grid_y < gridmap.shape[0]:
                         gridmap[grid_y, grid_x] = 1  # 주행 가능 영역을 gridmap에 표시
         ##########################################################################################
+        # # Create a meshgrid for interpolation
+        # grid_x, grid_y = np.meshgrid(np.arange(gridmap.shape[1]), np.arange(gridmap.shape[0]))
+        # # Get coordinates of non-zero points
+        # points = np.array(np.nonzero(gridmap)).T
+        # values = gridmap[points[:, 0], points[:, 1]]
+        # # Perform nearest neighbor interpolation
+        # interpolated_gridmap = griddata(points, values, (grid_y, grid_x), method='nearest')
+        
+        # Apply Gaussian filter
+        sigma = 2  # Adjust this value to control the amount of smoothing
+        interpolated_gridmap = gaussian_filter(gridmap.astype(float), sigma)
+        # Normalize the result
+        interpolated_gridmap = (interpolated_gridmap - interpolated_gridmap.min()) / (interpolated_gridmap.max() - interpolated_gridmap.min())
+        
         cmap = mcolors.ListedColormap(['white', 'green'])
         # 그리드맵 시각화 시 실제 거리 단위로 x축과 y축 설정
-        plt.imshow(gridmap, cmap=cmap, extent=[-grid_size/2, grid_size/2, grid_size, 0], vmin=0, vmax=1)
+        plt.imshow(interpolated_gridmap, cmap=cmap, extent=[-grid_size/2, grid_size/2, grid_size, 0], vmin=0, vmax=1)
         plt.title('Top-Down Gridmap')
         plt.xlabel('X (meters)')
         plt.ylabel('Y (meters)')
@@ -149,7 +164,7 @@ if __name__ == '__main__':
         plt.gca().set_xticks(np.arange(-grid_size/2, grid_size/2 + 5, 5), minor=False)  # 주 그리드 선 (5미터 간격)
         plt.gca().set_yticks(np.arange(0, grid_size + 5, 5), minor=False)  # 주 그리드 선 (5미터 간격)
         plt.xlim(-25, 25)
-        plt.ylim(0, 50)
+        plt.ylim(0, 25)
         plt.gca().grid(True, which='major', color='gray', linestyle='-', linewidth=1.0)
         # # 주 그리드 레이블 표시
         # plt.gca().set_xticklabels(np.arange(-grid_size/2, grid_size/2 + 5, 5))  # x축 레이블을 5미터 단위로 설정
